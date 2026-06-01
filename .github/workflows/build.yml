@@ -1,0 +1,41 @@
+name: Android APK Build
+
+on:
+  push:
+    branches: [ "main" ] # আপনার মেইন ব্রাঞ্চের নাম master হলে main কেটে master লিখবেন
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    # gradlew ফাইলটি লিনাক্সে রান করার পারমিশন দেওয়া
+    - name: Grant Execute Permission for Gradlew
+      run: |
+        cd AkashVPN
+        chmod +x gradlew
+
+    # মোবাইলের জন্য APK বিল্ড করার মূল কমান্ড
+    - name: Build Debug APK
+      run: |
+        cd AkashVPN
+        ./gradlew assembleDebug
+
+    # বিল্ড হওয়া APK ফাইলটি খুঁজে নিয়ে ডাউনলোডের জন্য আপলোড করা
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AkashVPN-Debug-APK
+        path: "**/build/outputs/apk/debug/*.apk" # এটি নিখুঁতভাবে আপনার APK ফাইলটি খুঁজে নেবে
