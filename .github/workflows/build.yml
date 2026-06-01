@@ -1,0 +1,49 @@
+name: Android APK Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# গিটহাবের ওয়ার্নিং দূর করার জন্য Node.js 24 ফোর্স করা হলো
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # প্রজেক্টের যেকোনো জায়গায় থাকা gradlew ফাইল খুঁজে এক্সিকিউট পারমিশন দেওয়া
+    - name: Grant Execute Permission for Gradlew
+      run: |
+        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+        if [ -z "$GRADLEW_PATH" ]; then
+          echo "Error: gradlew file not found anywhere in the repository!"
+          exit 1
+        fi
+        chmod +x "$GRADLEW_PATH"
+        echo "GRADLEW_DIR=$(dirname "$GRADLEW_PATH")" >> $GITHUB_ENV
+
+    # সঠিক ডিরেক্টরিতে গিয়ে APK বিল্ড করা
+    - name: Build Debug APK
+      run: |
+        cd ${{ env.GRADLEW_DIR }}
+        ./gradlew assembleDebug
+
+    # তৈরি হওয়া APK ফাইলটি খুঁজে নিয়ে আপলোড করা
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AkashVPN-Debug-APK
+        path: "**/build/outputs/apk/debug/*.apk"
