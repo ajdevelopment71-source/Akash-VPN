@@ -17,7 +17,7 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # ১. জিপ ফাইল আনজিপ করা
+    # ১. আপনার আপলোড করা জিপ ফাইলটি আনজিপ করা
     - name: Unzip AkashVPN Source Code
       run: |
         if [ -f "AkashVPN.zip" ]; then
@@ -26,31 +26,23 @@ jobs:
           echo "AkashVPN.zip file not found!"
         fi
 
-    # ২. JDK 17 সেটআপ
+    # ২. JDK 17 সেটআপ করা
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # ৩. gradlew ফাইলের ফরম্যাট ঠিক করা এবং পারমিশন দেওয়া (💡 এটাই মেইন ফিক্স)
-    - name: Fix Gradlew File Format and Permissions
-      run: |
-        if [ -d "AkashVPN" ]; then
-          cd AkashVPN
-        fi
-        sed -i 's/\r$//' gradlew
-        chmod +x gradlew
-
-    # ৪. অ্যান্ড্রয়েড প্রজেক্টের APK বিল্ড করা
+    # ৩. গ্র্যাডল রান করা (💡 ফরম্যাটের ঝামেলা এড়াতে সরাসরি bash দিয়ে রান)
     - name: Build Debug APK
       run: |
         if [ -d "AkashVPN" ]; then
           cd AkashVPN
         fi
-        ./gradlew assembleDebug --stacktrace
+        chmod +x gradlew
+        bash gradlew assembleDebug --stacktrace
 
-    # ৫. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য আপলোড করা
+    # ৪. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য আপলোড করা
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
