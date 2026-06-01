@@ -17,43 +17,29 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # ১. আপনার আপলোড করা জিপ ফাইলটি আনজিপ করা
+    # ১. জিপ ফাইল আনজিপ করা
     - name: Unzip AkashVPN Source Code
       run: |
         if [ -f "AkashVPN.zip" ]; then
           unzip -o AkashVPN.zip
-        else
-          echo "AkashVPN.zip file not found!"
         fi
 
-    # ২. JDK 17 সেটআপ করা
+    # ২. JDK 17 সেটআপ
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # ৩. gradlew ফাইলটি ঠিক কোথায় আছে তা স্বয়ংক্রিয়ভাবে খুঁজে বের করা এবং রান করা
-    - name: Auto Find Gradlew and Build APK
+    # ৩. ভাঙা gradlew ফাইল স্কিপ করে সরাসরি জার (JAR) ফাইল দিয়ে বিল্ড করা
+    - name: Build APK Direct via Gradle Wrapper Jar
       run: |
-        # পুরো রিপোজিটরির ভেতর gradlew ফাইলটি কোথায় আছে তা খোঁজা হচ্ছে
-        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+        # প্রজেক্টের মেইন ডিরেক্টরি খুঁজে বের করা
+        PROJECT_DIR=$(find . -name "build.gradle" -exec dirname {} \; | head -n 1)
+        cd "$PROJECT_DIR"
         
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "Error: gradlew file could not be found anywhere after unzip!"
-          exit 1
-        fi
-        
-        # সেই ফোল্ডারের ডিরেক্টরিতে যাওয়া
-        GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
-        cd "$GRADLEW_DIR"
-        
-        # ফাইলের উইন্ডোজ ফরম্যাট ঠিক করা এবং পারমিশন দেওয়া
-        sed -i 's/\r$//' gradlew
-        chmod +x gradlew
-        
-        # সরাসরি নিখুঁতভাবে বিল্ড রান করা
-        ./gradlew assembleDebug --stacktrace
+        # gradlew ফাইল ব্যবহার না করে সরাসরি ভেতরের wrapper jar রান করা হলো
+        java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain assembleDebug --stacktrace
 
     # ৪. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য আপলোড করা
     - name: Upload APK Artifact
