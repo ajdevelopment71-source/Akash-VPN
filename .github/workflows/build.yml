@@ -33,14 +33,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ৩. গ্র্যাডল রান করা (💡 ফরম্যাটের ঝামেলা এড়াতে সরাসরি bash দিয়ে রান)
-    - name: Build Debug APK
+    # ৩. gradlew ফাইলটি ঠিক কোথায় আছে তা স্বয়ংক্রিয়ভাবে খুঁজে বের করা এবং রান করা
+    - name: Auto Find Gradlew and Build APK
       run: |
-        if [ -d "AkashVPN" ]; then
-          cd AkashVPN
+        # পুরো রিপোজিটরির ভেতর gradlew ফাইলটি কোথায় আছে তা খোঁজা হচ্ছে
+        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
+        
+        if [ -z "$GRADLEW_PATH" ]; then
+          echo "Error: gradlew file could not be found anywhere after unzip!"
+          exit 1
         fi
+        
+        # সেই ফোল্ডারের ডিরেক্টরিতে যাওয়া
+        GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
+        cd "$GRADLEW_DIR"
+        
+        # ফাইলের উইন্ডোজ ফরম্যাট ঠিক করা এবং পারমিশন দেওয়া
+        sed -i 's/\r$//' gradlew
         chmod +x gradlew
-        bash gradlew assembleDebug --stacktrace
+        
+        # সরাসরি নিখুঁতভাবে বিল্ড রান করা
+        ./gradlew assembleDebug --stacktrace
 
     # ৪. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য আপলোড করা
     - name: Upload APK Artifact
