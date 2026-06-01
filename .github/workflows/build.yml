@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# গিটহাবের ওয়ার্নিং দূর করার জন্য Node.js 24 ফোর্স করা হলো
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
@@ -18,30 +17,23 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    # প্রজেক্টের যেকোনো জায়গায় থাকা gradlew ফাইল খুঁজে এক্সিকিউট পারমিশন দেওয়া
+    # ১. আপনার জিপ ফাইলের ফোল্ডার স্ট্রাকচার অনুযায়ী সঠিক ডিরেক্টরিতে যাওয়া ও পারমিশন দেওয়া
     - name: Grant Execute Permission for Gradlew
       run: |
-        GRADLEW_PATH=$(find . -name "gradlew" -print -quit)
-        if [ -z "$GRADLEW_PATH" ]; then
-          echo "Error: gradlew file not found anywhere in the repository!"
-          exit 1
+        if [ -d "AkashVPN" ]; then
+          cd AkashVPN
         fi
-        chmod +x "$GRADLEW_PATH"
-        echo "GRADLEW_DIR=$(dirname "$GRADLEW_PATH")" >> $GITHUB_ENV
+        chmod +x gradlew
 
-    # সঠিক ডিরেক্টরিতে গিয়ে APK বিল্ড করা
+    # ২. অ্যান্ড্রয়েড প্রজেক্ট সফলভাবে বিল্ড করা
     - name: Build Debug APK
       run: |
-        cd ${{ env.GRADLEW_DIR }}
-        ./gradlew assembleDebug
+        if [ -d "AkashVPN" ]; then
+          cd AkashVPN
+        fi
+        ./gradlew assembleDebug --stacktrace
 
-    # তৈরি হওয়া APK ফাইলটি খুঁজে নিয়ে আপলোড করা
+    # ৩. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য রেডি করা
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
