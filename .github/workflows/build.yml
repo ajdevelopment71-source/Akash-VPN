@@ -1,4 +1,4 @@
-name: Android APK Build
+name: Android APK Build from Zip
 
 on:
   push:
@@ -17,7 +17,23 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # ১. আপনার জিপ ফাইলের ফোল্ডার স্ট্রাকচার অনুযায়ী সঠিক ডিরেক্টরিতে যাওয়া ও পারমিশন দেওয়া
+    # ১. আপনার আপলোড করা জিপ ফাইলটি আনজিপ করার কমান্ড
+    - name: Unzip AkashVPN Source Code
+      run: |
+        if [ -f "AkashVPN.zip" ]; then
+          unzip -o AkashVPN.zip
+        else
+          echo "AkashVPN.zip file not found in root directory!"
+        fi
+
+    # ২. JDK 17 সেটআপ করা
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # ৩. আনজিপ হওয়া ফোল্ডারে ঢুকে gradlew ফাইলটিকে রান করার পারমিশন দেওয়া
     - name: Grant Execute Permission for Gradlew
       run: |
         if [ -d "AkashVPN" ]; then
@@ -25,7 +41,7 @@ jobs:
         fi
         chmod +x gradlew
 
-    # ২. অ্যান্ড্রয়েড প্রজেক্ট সফলভাবে বিল্ড করা
+    # ৪. অ্যান্ড্রয়েড প্রজেক্টের APK বিল্ড করা
     - name: Build Debug APK
       run: |
         if [ -d "AkashVPN" ]; then
@@ -33,7 +49,7 @@ jobs:
         fi
         ./gradlew assembleDebug --stacktrace
 
-    # ৩. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য রেডি করা
+    # ৫. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য রেডি করা
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
