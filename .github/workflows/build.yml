@@ -3,11 +3,6 @@ name: Android APK Build from Zip
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build:
@@ -17,12 +12,10 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # ১. জিপ ফাইল আনজিপ করা
-    - name: Unzip AkashVPN Source Code
+    # ১. জিপ ফাইল আনজিপ করে my_app নামের ফোল্ডারে রাখা হচ্ছে
+    - name: Unzip Source Code
       run: |
-        if [ -f "AkashVPN.zip" ]; then
-          unzip -o AkashVPN.zip
-        fi
+        unzip -o AkashVPN.zip -d my_app
 
     # ২. JDK 17 সেটআপ
     - name: Set up JDK 17
@@ -31,17 +24,21 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ৩. ভাঙা gradlew ফাইল স্কিপ করে সরাসরি জার (JAR) ফাইল দিয়ে বিল্ড করা
-    - name: Build APK Direct via Gradle Wrapper Jar
-      run: |
-        # প্রজেক্টের মেইন ডিরেক্টরি খুঁজে বের করা
-        PROJECT_DIR=$(find . -name "build.gradle" -exec dirname {} \; | head -n 1)
-        cd "$PROJECT_DIR"
-        
-        # gradlew ফাইল ব্যবহার না করে সরাসরি ভেতরের wrapper jar রান করা হলো
-        java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain assembleDebug --stacktrace
+    # ৩. গিটহাবের নিজস্ব অরিজিনাল গ্র্যাডল সেটআপ করা (gradlew বাদ)
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
-    # ৪. তৈরি হওয়া APK ফাইলটি ডাউনলোডের জন্য আপলোড করা
+    # ৪. মেইন ডিরেক্টরি খুঁজে গিটহাবের নিজস্ব গ্র্যাডল দিয়ে সরাসরি বিল্ড করা
+    - name: Build APK Direct
+      run: |
+        # যেখানে settings.gradle আছে সেটাই মেইন প্রজেক্ট
+        ROOT_DIR=$(find my_app -name "settings.gradle" -exec dirname {} \;)
+        cd "$ROOT_DIR"
+        
+        # এখানে gradlew এর বদলে সরাসরি সার্ভারের gradle কমান্ড ব্যবহার করা হলো
+        gradle assembleDebug --stacktrace
+
+    # ৫. তৈরি হওয়া APK আপলোড করা
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
