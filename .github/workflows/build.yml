@@ -12,33 +12,32 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    # ১. জিপ ফাইল আনজিপ করে my_app নামের ফোল্ডারে রাখা হচ্ছে
+    # ১. জিপ ফাইল আনজিপ করা
     - name: Unzip Source Code
       run: |
         unzip -o AkashVPN.zip -d my_app
 
-    # ২. JDK 17 সেটআপ
-    - name: Set up JDK 17
+    # ২. JDK 11 সেটআপ করা (যা Gradle 7-এর জন্য একদম পারফেক্ট)
+    - name: Set up JDK 11
       uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: '11'
         distribution: 'temurin'
 
-    # ৩. গিটহাবের নিজস্ব অরিজিনাল গ্র্যাডল সেটআপ করা (gradlew বাদ)
+    # ৩. আপনার প্রজেক্ট অনুযায়ী Gradle 7.5 সংস্করণ নির্দিষ্ট করে দেওয়া
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '7.5' 
 
-    # ৪. মেইন ডিরেক্টরি খুঁজে গিটহাবের নিজস্ব গ্র্যাডল দিয়ে সরাসরি বিল্ড করা
+    # ৪. মেইন ডিরেক্টরি খুঁজে সরাসরি বিল্ড করা
     - name: Build APK Direct
       run: |
-        # যেখানে settings.gradle আছে সেটাই মেইন প্রজেক্ট
         ROOT_DIR=$(find my_app -name "settings.gradle" -exec dirname {} \;)
         cd "$ROOT_DIR"
-        
-        # এখানে gradlew এর বদলে সরাসরি সার্ভারের gradle কমান্ড ব্যবহার করা হলো
         gradle assembleDebug --stacktrace
 
-    # ৫. তৈরি হওয়া APK আপলোড করা
+    # ৫. তৈরি হওয়া APK ডাউনলোডের জন্য আপলোড করা
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
