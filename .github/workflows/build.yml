@@ -21,12 +21,14 @@ jobs:
         run: |
           git clone --depth 1 --branch v0.7.47 https://github.com/schwabe/ics-openvpn.git AkashVPN2/ics-openvpn
 
-      - name: Patch ics-openvpn build file
+      - name: Patch ics-openvpn
         run: |
-          # Root build.gradle.kts এর repository block সরিয়ে দাও
+          # repository conflict fix
           sed -i '/allprojects/,/^}/d' AkashVPN2/ics-openvpn/build.gradle.kts || true
-          # main/build.gradle.kts এর repository block সরিয়ে দাও
           sed -i '/^repositories/,/^}/d' AkashVPN2/ics-openvpn/main/build.gradle.kts || true
+          # buildConfig fix - android block এর ভেতরে buildFeatures যোগ করো
+          sed -i '/buildFeatures {/,/}/d' AkashVPN2/ics-openvpn/main/build.gradle.kts || true
+          sed -i '/android {/a\    buildFeatures {\n        buildConfig = true\n        dataBinding = false\n    }' AkashVPN2/ics-openvpn/main/build.gradle.kts || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -36,7 +38,7 @@ jobs:
       - name: Build
         run: |
           cd AkashVPN2
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
+          gradle assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
